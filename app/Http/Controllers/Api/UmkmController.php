@@ -26,20 +26,29 @@ class UmkmController extends Controller
         ]);
 
         $umkm = Umkm::create($data);
-        return response()->json($umkm, 201);
+        return response()->json([
+            'message' => 'created',
+            'data' => $umkm
+        ], 201);
     }
 
     public function show($id)
     {
         $umkm = Umkm::with('products')->findOrFail($id);
-        return response()->json($umkm);
+        return response()->json([
+            'message' => 'success',
+            'data' => $umkm
+        ], 201);
     }
 
     public function update(Request $request, $id)
     {
         $umkm = Umkm::findOrFail($id);
         $umkm->update($request->all());
-        return response()->json($umkm);
+        return response()->json([
+            'message' => 'updated',
+            'data' => $umkm
+        ], 200);
     }
 
     public function destroy($id)

@@ -27,20 +27,29 @@ class ProductController extends Controller
         ]);
 
         $product = Product::create($data);
-        return response()->json($product, 201);
+        return response()->json([
+            'message' => 'succes',
+            'data' => $product
+        ], 201);
     }
 
     public function show($id)
     {
         $product = Product::with('umkm')->findOrFail($id);
-        return response()->json($product);
+        return response()->json([
+            'message' => 'success',
+            'data' => $product
+        ], 200);
     }
 
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
         $product->update($request->all());
-        return response()->json($product);
+        return response()->json([
+            'message' => 'success',
+            'data' => $product
+        ], 200);
     }
 
     public function destroy($id)

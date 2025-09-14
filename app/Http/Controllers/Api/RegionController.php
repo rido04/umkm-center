@@ -26,7 +26,10 @@ class RegionController extends Controller
         ]);
 
         $region = Region::create($data);
-        return response()->json($region, 201);
+        return response()->json([
+            'mesage' => 'created',
+            'data' => $region
+        ], 201);
     }
 
     /**
@@ -35,7 +38,10 @@ class RegionController extends Controller
     public function show(string $id)
     {
         $region = Region::findOrFail($id);
-        return response()->json($region);
+        return response()->json([
+            'message' => 'success',
+            'data' => $region
+        ], 201);
     }
 
     /**
@@ -45,7 +51,10 @@ class RegionController extends Controller
     {
         $region = Region::findOrFail($id);
         $region = Region::update($request->all());
-        return response()->json($region);
+        return response()->json([
+            'message' => 'updated',
+            'data' => $region
+        ], 200);
     }
 
     /**

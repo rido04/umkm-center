@@ -4,7 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class umkm extends Model
+class Umkm extends Model
 {
-    //
+    protected $fillable = [
+        'name', 'description', 'address', 'phone', 'region_id', 'created_by'
+    ];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function region()
+    {
+        return $this->belongsTo(Region::class);
+    }
 }

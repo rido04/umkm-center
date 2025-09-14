@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class ProductController extends Controller
 {
@@ -12,38 +13,40 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json(Product::with('umkm')->get());
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'umkm_id' => 'required|exists:umkms,id',
+            'name' => 'required|string',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric',
+            'image' => 'nullable|string',
+        ]);
+
+        $product = Product::create($data);
+        return response()->json($product, 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show($id)
     {
-        //
+        $product = Product::with('umkm')->findOrFail($id);
+        return response()->json($product);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $product->update($request->all());
+        return response()->json($product);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $product = Product::findOrFail($id);
+        $product->delete();
+        return response()->json(null, 204);
     }
 }

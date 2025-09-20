@@ -10,6 +10,7 @@ class Event extends Model
         'title',
         'image_path',
         'description',
+        'places',
         'event_date',
         'start_date',
         'end_date',

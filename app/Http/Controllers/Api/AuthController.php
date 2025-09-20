@@ -51,8 +51,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate
-        ([
+        $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
@@ -65,12 +64,21 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $token = $user->createToken('api-token')->plainTextToken;
+
         return response()->json([
             'message' => 'Login success',
-            'user' => $user,
-            'token' => $user->createToken('api-token')->plainTextToken,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames(),
+            ],
+            'token' => $token,
         ], 200);
     }
+
+
 
 
     public function logout(Request $request){

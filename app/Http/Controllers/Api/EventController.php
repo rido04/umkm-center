@@ -25,6 +25,7 @@ class EventController extends Controller
             'title' => 'required|string',
             'image_path' => 'nullable|string',
             'description' => 'nullable|string',
+            'places' => 'nullable|string',
             'event_date' => 'nullable|date',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',

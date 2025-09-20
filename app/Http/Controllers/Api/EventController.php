@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Region;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Event;
+use Illuminate\Http\Request;
 
-class RegionController extends Controller
+class EventController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return response()->json(Region::all());
+        return response()->json(Event::all());
     }
 
     /**
@@ -22,13 +22,18 @@ class RegionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string'
+            'title' => 'required|string',
+            'image_path' => 'nullable|string',
+            'description' => 'nullable|string',
+            'event_date' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
         ]);
 
-        $region = Region::create($data);
+        $event = Event::create($data);
         return response()->json([
-            'mesage' => 'created',
-            'data' => $region
+            'message' => 'created',
+            'data' => $event
         ], 201);
     }
 
@@ -37,11 +42,11 @@ class RegionController extends Controller
      */
     public function show(string $id)
     {
-        $region = Region::findOrFail($id);
+        $event = Event::findOrFail($id);
         return response()->json([
             'message' => 'success',
-            'data' => $region
-        ], 201);
+            'data' => $event
+        ], 200);
     }
 
     /**
@@ -49,11 +54,11 @@ class RegionController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $region = Region::findOrFail($id);
-        $region = Region::update($request->all());
+        $event = Event::findOrFail($id);
+        $event->update($request->all());
         return response()->json([
             'message' => 'updated',
-            'data' => $region
+            'data' => $event
         ], 200);
     }
 
@@ -62,11 +67,11 @@ class RegionController extends Controller
      */
     public function destroy(string $id)
     {
-        $region = Region::findOrFail($id);
-        $region->delete();
+        $event = Event::findOrFail($id);
+        $event->delete();
         return response()->json([
             'message' => 'deleted',
-            'data' => $region
+            'data' => $event
         ], 204);
     }
 }

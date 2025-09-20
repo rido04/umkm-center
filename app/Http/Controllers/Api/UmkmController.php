@@ -55,6 +55,9 @@ class UmkmController extends Controller
     {
         $umkm = Umkm::findOrFail($id);
         $umkm->delete();
-        return response()->json(null, 204);
+        return response()->json([
+            'message' => 'deleted',
+            'data' => $umkm
+        ], 204);
     }
 }

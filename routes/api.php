@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UmkmController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\RegionController;
 use App\Http\Controllers\Api\ProductController;
@@ -16,6 +17,10 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     ]);
 });
 
+//  Crud User buat admin
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('users', UserController::class);
+});
 
 Route::post('login', [AuthController::class, 'login']);
 

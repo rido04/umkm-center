@@ -9,6 +9,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * App\Models\User
+ *
+ * @method bool hasRole(string|array $roles)
+ * @method \Spatie\Permission\Models\Role[] getRoleNames()
+ * @method $this assignRole(...$roles)
+ * @mixin IdeHelperUser
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */

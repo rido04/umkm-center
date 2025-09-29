@@ -47,4 +47,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function umkm()
+    {
+        return $this->hasOne(Umkm::class);
+    }
 }

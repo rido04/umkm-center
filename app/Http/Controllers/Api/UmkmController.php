@@ -23,6 +23,7 @@ class UmkmController extends Controller
             'description' => 'nullable|string',
             'address' => 'nullable|string',
             'phone' => 'nullable|string',
+            'user_id' => 'required|exists:users,id',
         ]);
 
         $umkm = Umkm::create($data);

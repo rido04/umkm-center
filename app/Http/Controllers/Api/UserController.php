@@ -41,6 +41,7 @@ class UserController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
+            'image_path' => 'nullable|string',
             'role'     => 'required|string|in:owner,admin',
         ]);
 
@@ -48,6 +49,7 @@ class UserController extends Controller
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'image_path' => $validated['image_path'],
         ]);
 
         $user->assignRole($validated['role']);
@@ -83,6 +85,7 @@ class UserController extends Controller
             'name'     => 'sometimes|string|max:255',
             'email'    => 'sometimes|email|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:6',
+            'image_path' => 'sometimes|string',
             'role'     => 'sometimes|string|in:owner,admin',
         ]);
 

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
-        'umkm_id', 'name', 'description', 'price', 'image'
+        'umkm_id', 'name', 'description', 'price', 'image_path'
     ];
 
     public function umkm()

@@ -23,7 +23,7 @@ class ProductController extends Controller
             'name' => 'required|string',
             'description' => 'nullable|string',
             'price' => 'required|numeric',
-            'image' => 'nullable|string',
+            'image_path' => 'nullable|string',
         ]);
 
         $product = Product::create($data);

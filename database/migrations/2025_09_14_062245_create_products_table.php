@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->decimal('price', 12, 2)->default(0);
-            $table->string('image')->nullable();
+            $table->string('image_path')->nullable();
             $table->timestamps();
             $table->foreign('umkm_id')->references('id')->on('umkms')->cascadeOnDelete();
         });

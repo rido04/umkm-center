@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -13,7 +14,18 @@ class EventController extends Controller
      */
     public function index()
     {
-        return response()->json(Event::all());
+        $events = Event::all()->map(function ($event) {
+            // tambahin URL biar langsung bisa diakses dari FE
+            $event->image_url = $event->image_path
+                ? asset('storage/' . $event->image_path)
+                : null;
+            return $event;
+        });
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $events
+        ], 200);
     }
 
     /**
@@ -23,18 +35,36 @@ class EventController extends Controller
     {
         $data = $request->validate([
             'title' => 'required|string',
-            'image_path' => 'nullable|string',
             'description' => 'nullable|string',
             'places' => 'nullable|string',
             'event_date' => 'nullable|date',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
+        // kalau ada file image
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('images/events', 'public');
+            $data['image_path'] = $path;
+        }
+
         $event = Event::create($data);
+
         return response()->json([
-            'message' => 'created',
-            'data' => $event
+            'message' => 'Event created successfully',
+            'data' => [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'places' => $event->places,
+                'event_date' => $event->event_date,
+                'start_date' => $event->start_date,
+                'end_date' => $event->end_date,
+                'image_url' => $event->image_path ? asset('storage/' . $event->image_path) : null,
+                'created_at' => $event->created_at,
+                'updated_at' => $event->updated_at,
+            ],
         ], 201);
     }
 
@@ -44,6 +74,8 @@ class EventController extends Controller
     public function show(string $id)
     {
         $event = Event::findOrFail($id);
+        $event->image_url = $event->image_path ? asset('storage/' . $event->image_path) : null;
+
         return response()->json([
             'message' => 'success',
             'data' => $event
@@ -56,10 +88,42 @@ class EventController extends Controller
     public function update(Request $request, string $id)
     {
         $event = Event::findOrFail($id);
-        $event->update($request->all());
+
+        $data = $request->validate([
+            'title' => 'sometimes|required|string',
+            'description' => 'nullable|string',
+            'places' => 'nullable|string',
+            'event_date' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            // hapus gambar lama kalau ada
+            if ($event->image_path && Storage::disk('public')->exists($event->image_path)) {
+                Storage::disk('public')->delete($event->image_path);
+            }
+
+            $path = $request->file('image')->store('images/events', 'public');
+            $data['image_path'] = $path;
+        }
+
+        $event->update($data);
+
         return response()->json([
-            'message' => 'updated',
-            'data' => $event
+            'message' => 'Event updated successfully',
+            'data' => [
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'places' => $event->places,
+                'event_date' => $event->event_date,
+                'start_date' => $event->start_date,
+                'end_date' => $event->end_date,
+                'image_url' => $event->image_path ? asset('storage/' . $event->image_path) : null,
+                'updated_at' => $event->updated_at,
+            ]
         ], 200);
     }
 
@@ -69,10 +133,15 @@ class EventController extends Controller
     public function destroy(string $id)
     {
         $event = Event::findOrFail($id);
+
+        if ($event->image_path && Storage::disk('public')->exists($event->image_path)) {
+            Storage::disk('public')->delete($event->image_path);
+        }
+
         $event->delete();
+
         return response()->json([
-            'message' => 'deleted',
-            'data' => $event
-        ], 204);
+            'message' => 'Event deleted successfully'
+        ], 200);
     }
 }

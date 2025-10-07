@@ -42,38 +42,48 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string',
+        if (!Auth::user()->hasRole('admin')) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'role' => 'required|string',
-            'image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+            'image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'role' => 'required|string|in:owner,admin',
         ]);
 
+        // Simpan image jika ada
         $imagePath = null;
-
         if ($request->hasFile('image_path')) {
-            $file = $request->file('image_path');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            $file->storeAs('public/images', $fileName);
-            $imagePath = 'storage/images/' . $fileName;
+            $imagePath = $request->file('image_path')->store('images', 'public');
         }
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
             'image_path' => $imagePath,
         ]);
 
-        // assign role (owner / admin / dll)
-        $user->assignRole($request->role);
+        $user->assignRole($validated['role']);
+
+        // Rangkai image URL biar bisa langsung diakses
+        $user->image_path = $user->image_path
+            ? asset('storage/' . $user->image_path)
+            : null;
+
+        // Tambahkan relasi roles + image_url seperti sebelumnya
+        $user->load('roles');
+        $user->image_url = $user->image_path;
 
         return response()->json([
             'message' => 'User created successfully',
-            'user' => $user->load('roles')
-        ]);
+            'user' => $user
+        ], 201);
     }
+
 
 
     /**

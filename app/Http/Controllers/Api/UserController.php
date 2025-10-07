@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum', 'role:admin']);
+        $this->middleware(['auth:sanctum', 'role:admin'])->except('index', 'show');
     }
 
     /**
@@ -21,11 +21,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        // if (!Auth::user()->hasRole('admin')) {
+        //     return response()->json(['message' => 'Forbidden'], 403);
+        // }
 
-        $users = User::with('roles')->get();
+        $users = User::role('owner')->with('roles')->get();
         return response()->json($users);
     }
 
@@ -65,8 +65,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        if (!$user->hasRole('owner')) {
+        return response()->json(['message' => 'Forbidden'], 403);
         }
 
         return response()->json($user->load('roles'));

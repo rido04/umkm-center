@@ -42,38 +42,39 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        if (!Auth::user()->hasRole('admin')) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $request->validate([
+            'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'role' => 'required|string|in:owner,admin',
+            'role' => 'required|string',
+            'image_path' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
-        // Simpan image jika ada
         $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('users', 'public');
+
+        if ($request->hasFile('image_path')) {
+            $file = $request->file('image_path');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/images', $fileName);
+            $imagePath = 'storage/images/' . $fileName;
         }
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
             'image_path' => $imagePath,
         ]);
 
-        $user->assignRole($validated['role']);
+        // assign role (owner / admin / dll)
+        $user->assignRole($request->role);
 
         return response()->json([
             'message' => 'User created successfully',
-            'user' => $this->formatUser($user)
-        ], 201);
+            'user' => $user->load('roles')
+        ]);
     }
+
 
     /**
      * Show user detail (public hanya boleh lihat owner)

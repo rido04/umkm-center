@@ -16,66 +16,71 @@ class UmkmController extends Controller
     {
         $umkms = Umkm::with('products')->get();
 
-        // Rangkai URL gambar tiap umkm
-        $umkms->transform(function ($umkm) {
-            if ($umkm->image_path) {
-                $umkm->image_path = asset('storage/' . $umkm->image_path);
-            }
+        // Rangkai full URL untuk image_path biar FE tinggal pakai
+        $umkms->map(function ($umkm) {
+            $umkm->image_url = $umkm->image_path
+                ? asset('storage/' . $umkm->image_path)
+                : null;
             return $umkm;
         });
 
         return response()->json($umkms);
     }
 
+    /**
+     * Store a newly created UMKM.
+     */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string',
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'address' => 'nullable|string',
-            'phone' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
+            'phone' => 'nullable|string|max:20',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'user_id' => 'required|exists:users,id',
             'region_id' => 'nullable|exists:regions,id'
         ]);
 
+        // Simpan image PATH RELATIF ke database (bukan full URL)
+        $imagePath = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('images/umkm', 'public');
-            $data['image_path'] = asset('storage/' . $path);
+            $imagePath = $request->file('image')->store('images/umkm', 'public');
         }
 
-        $umkm = Umkm::create($data);
+        $umkm = Umkm::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'image_path' => $imagePath,  // Simpan path relatif
+            'user_id' => $validated['user_id'],
+            'region_id' => $validated['region_id'] ?? null,
+        ]);
 
-        // kalau kamu mau include relasi, tinggal load:
-        $umkm->load(['user', 'region', 'products']); // opsional, tergantung relasi di model
+        // Load relasi & format FULL URL untuk response (FE pakai ini)
+        $umkm->load(['user', 'region', 'products']);
+        $umkm->image_url = $umkm->image_path
+            ? asset('storage/' . $umkm->image_path)
+            : null;
 
         return response()->json([
             'message' => 'UMKM created successfully',
-            'data' => [
-                'id' => $umkm->id,
-                'name' => $umkm->name,
-                'description' => $umkm->description,
-                'address' => $umkm->address,
-                'phone' => $umkm->phone,
-            'image_url' => $umkm->image_path ?? null,
-            'user' => $umkm->user ?? null,
-            'region' => $umkm->region ?? null,
-            'products' => $umkm->products ?? [],
-            'created_at' => $umkm->created_at,
-            'updated_at' => $umkm->updated_at,
-        ]
-    ], 201);
-}
+            'data' => $umkm
+        ], 201);
+    }
 
-
-
+    /**
+     * Show UMKM detail.
+     */
     public function show($id)
     {
         $umkm = Umkm::with('products')->findOrFail($id);
 
-        if ($umkm->image_path) {
-            $umkm->image_path = asset('storage/' . $umkm->image_path);
-        }
+        // Format full URL biar FE tinggal pakai
+        $umkm->image_url = $umkm->image_path
+            ? asset('storage/' . $umkm->image_path)
+            : null;
 
         return response()->json([
             'message' => 'success',
@@ -83,29 +88,64 @@ class UmkmController extends Controller
         ], 200);
     }
 
+    /**
+     * Update UMKM.
+     */
     public function update(Request $request, $id)
     {
         $umkm = Umkm::findOrFail($id);
-        $umkm->update($request->all());
 
-        if ($umkm->image_path) {
-            $umkm->image_path = asset('storage/' . $umkm->image_path);
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'address' => 'nullable|string',
+            'phone' => 'nullable|string|max:20',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'user_id' => 'sometimes|exists:users,id',
+            'region_id' => 'nullable|exists:regions,id'
+        ]);
+
+        // Handle image upload (hapus lama, upload baru)
+        if ($request->hasFile('image')) {
+            // Hapus gambar lama jika ada
+            if ($umkm->image_path && Storage::disk('public')->exists($umkm->image_path)) {
+                Storage::disk('public')->delete($umkm->image_path);
+            }
+
+            // Upload gambar baru & simpan PATH RELATIF
+            $validated['image_path'] = $request->file('image')->store('images/umkm', 'public');
         }
 
+        // Update data
+        $umkm->update($validated);
+
+        // Format FULL URL untuk response ke FE
+        $umkm->image_url = $umkm->image_path
+            ? asset('storage/' . $umkm->image_path)
+            : null;
+
         return response()->json([
-            'message' => 'updated',
+            'message' => 'UMKM updated successfully',
             'data' => $umkm
         ], 200);
     }
 
+    /**
+     * Delete UMKM.
+     */
     public function destroy($id)
     {
         $umkm = Umkm::findOrFail($id);
+
+        // Hapus image dari storage jika ada (sekarang bisa jalan karena path relatif!)
+        if ($umkm->image_path && Storage::disk('public')->exists($umkm->image_path)) {
+            Storage::disk('public')->delete($umkm->image_path);
+        }
+
         $umkm->delete();
 
         return response()->json([
-            'message' => 'deleted',
-            'data' => $umkm
-        ], 204);
+            'message' => 'UMKM deleted successfully'
+        ], 200);
     }
 }

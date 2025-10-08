@@ -24,12 +24,10 @@ class UserController extends Controller
     {
         $users = User::role('owner')->with('roles')->get();
 
-        // tambahkan image_url biar FE tinggal pakai langsung
+        // Tambahkan image_url biar FE tinggal pakai langsung
         $users->map(function ($user) {
             $user->image_url = $user->image_path
-                ? (str_starts_with($user->image_path, 'http')
-                    ? $user->image_path
-                    : asset('storage/' . $user->image_path))
+                ? asset('storage/' . $user->image_path)
                 : null;
             return $user;
         });
@@ -54,7 +52,7 @@ class UserController extends Controller
             'role' => 'required|string|in:owner,admin',
         ]);
 
-        // Simpan image jika ada
+        // Simpan image PATH RELATIF jika ada
         $imagePath = null;
         if ($request->hasFile('image_path')) {
             $imagePath = $request->file('image_path')->store('images', 'public');
@@ -64,27 +62,22 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'image_path' => $imagePath,
+            'image_path' => $imagePath,  // Simpan path relatif
         ]);
 
         $user->assignRole($validated['role']);
 
-        // Rangkai image URL biar bisa langsung diakses
-        $user->image_path = $user->image_path
+        // Load relasi & format FULL URL untuk response
+        $user->load('roles');
+        $user->image_url = $user->image_path
             ? asset('storage/' . $user->image_path)
             : null;
-
-        // Tambahkan relasi roles + image_url seperti sebelumnya
-        $user->load('roles');
-        $user->image_url = $user->image_path;
 
         return response()->json([
             'message' => 'User created successfully',
             'user' => $user
         ], 201);
     }
-
-
 
     /**
      * Show user detail (public hanya boleh lihat owner)
@@ -95,11 +88,17 @@ class UserController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        return response()->json($this->formatUser($user));
+        // Load relasi & format full URL
+        $user->load('roles');
+        $user->image_url = $user->image_path
+            ? asset('storage/' . $user->image_path)
+            : null;
+
+        return response()->json($user);
     }
 
     /**
-     * Update user (hanya admin)
+     * Update user (admin atau diri sendiri)
      */
     public function update(Request $request, User $user)
     {
@@ -114,33 +113,49 @@ class UserController extends Controller
             'name'       => 'sometimes|string|max:255',
             'email'      => 'sometimes|email|unique:users,email,' . $user->id,
             'password'   => 'sometimes|string|min:6',
-            'image_path' => 'sometimes|string',
+            'image_path' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
             'role'       => 'sometimes|string|in:owner,admin',
         ]);
 
-        // kalau bukan admin, owner gak boleh ubah role
+        // Kalau bukan admin, owner gak boleh ubah role
         if (isset($validated['role']) && !$authUser->hasRole('admin')) {
             unset($validated['role']);
         }
 
-        // update basic data
+        // Update basic data
         if (isset($validated['name'])) $user->name = $validated['name'];
         if (isset($validated['email'])) $user->email = $validated['email'];
         if (isset($validated['password'])) $user->password = Hash::make($validated['password']);
-        if (isset($validated['image_path'])) $user->image_path = $validated['image_path'];
+
+        // Handle image upload (hapus lama, upload baru)
+        if ($request->hasFile('image_path')) {
+            // Hapus image lama jika ada
+            if ($user->image_path && Storage::disk('public')->exists($user->image_path)) {
+                Storage::disk('public')->delete($user->image_path);
+            }
+
+            // Upload image baru & simpan PATH RELATIF
+            $user->image_path = $request->file('image_path')->store('images', 'public');
+        }
+
         $user->save();
 
-        // cuma admin yang bisa ubah role
+        // Cuma admin yang bisa ubah role
         if (isset($validated['role']) && $authUser->hasRole('admin')) {
             $user->syncRoles([$validated['role']]);
         }
 
+        // Load relasi & format FULL URL untuk response
+        $user->load('roles');
+        $user->image_url = $user->image_path
+            ? asset('storage/' . $user->image_path)
+            : null;
+
         return response()->json([
             'message' => 'User updated successfully',
-            'user'    => $user->load('roles'),
+            'user'    => $user,
         ]);
     }
-
 
     /**
      * Delete user (hanya admin)
@@ -151,7 +166,7 @@ class UserController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        // hapus image jika ada
+        // Hapus image jika ada (sekarang bisa jalan karena path relatif!)
         if ($user->image_path && Storage::disk('public')->exists($user->image_path)) {
             Storage::disk('public')->delete($user->image_path);
         }
@@ -159,19 +174,5 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => 'User deleted successfully']);
-    }
-
-    /**
-     * Helper: format user with image_url
-     */
-    private function formatUser(User $user)
-    {
-        $user->load('roles');
-        $user->image_url = $user->image_path
-            ? (str_starts_with($user->image_path, 'http')
-                ? $user->image_path
-                : asset('storage/' . $user->image_path))
-            : null;
-        return $user;
     }
 }

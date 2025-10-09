@@ -16,7 +16,6 @@ class ProductController extends Controller
     {
         $products = Product::with('umkm')->get();
 
-        // Rangkai full URL untuk image_url (konsisten dengan UmkmController)
         $products->map(function ($product) {
             $product->image_url = $product->image_path
                 ? asset('storage/' . $product->image_path)
@@ -40,10 +39,10 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Simpan file image ke storage/public/images (PATH RELATIF)
+        // Simpan PATH RELATIF ke database
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images/products', 'public');
+            $imagePath = $request->file('image')->store('images', 'public');
         }
 
         $product = Product::create([
@@ -51,10 +50,10 @@ class ProductController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
-            'image_path' => $imagePath,  // Simpan path relatif
+            'image_path' => $imagePath,
         ]);
 
-        // Load relasi & format FULL URL untuk response
+        // Load relasi & tambahkan image_url untuk response
         $product->load('umkm');
         $product->image_url = $product->image_path
             ? asset('storage/' . $product->image_path)
@@ -73,7 +72,7 @@ class ProductController extends Controller
     {
         $product = Product::with('umkm')->findOrFail($id);
 
-        // Format full URL untuk FE
+        // Tambahkan image_url untuk FE
         $product->image_url = $product->image_path
             ? asset('storage/' . $product->image_path)
             : null;
@@ -92,42 +91,27 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
 
         $validated = $request->validate([
-            'umkm_id' => 'nullable|exists:umkms,id',
-            'name' => 'nullable|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'nullable|numeric',
+            'price' => 'sometimes|numeric',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Filter data yang akan diupdate
-        $dataToUpdate = [];
-
-        foreach (['umkm_id', 'name', 'description', 'price'] as $field) {
-            if ($request->has($field)) {
-                $dataToUpdate[$field] = $validated[$field] ?? null;
-            }
-        }
-
         // Handle image upload
         if ($request->hasFile('image')) {
-            // Hapus image lama
+            // Hapus gambar lama jika ada
             if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
                 Storage::disk('public')->delete($product->image_path);
             }
 
-            // Upload baru & simpan PATH RELATIF
-            $dataToUpdate['image_path'] = $request->file('image')->store('images/products', 'public');
+            // Upload baru & simpan PATH RELATIF ke validated
+            $validated['image_path'] = $request->file('image')->store('images', 'public');
         }
 
-        // Update product
-        if (!empty($dataToUpdate)) {
-            $product->update($dataToUpdate);
-        }
+        // Update data
+        $product->update($validated);
 
-        // Load relasi
-        $product->load('umkm');
-
-        // Format FULL URL untuk response
+        // Tambahkan image_url untuk response FE
         $product->image_url = $product->image_path
             ? asset('storage/' . $product->image_path)
             : null;

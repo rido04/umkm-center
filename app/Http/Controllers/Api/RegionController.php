@@ -50,7 +50,7 @@ class RegionController extends Controller
     public function update(Request $request, string $id)
     {
         $region = Region::findOrFail($id);
-        $region = Region::update($request->all());
+        $region->update($request->all());
         return response()->json([
             'message' => 'updated',
             'data' => $region

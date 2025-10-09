@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,11 +17,11 @@ class ProductController extends Controller
     {
         $products = Product::with('umkm')->get();
 
-        $products->map(function ($product) {
+        // ✅ FIX: Pakai each() biar langsung mutate collection
+        $products->each(function ($product) {
             $product->image_url = $product->image_path
                 ? asset('storage/' . $product->image_path)
                 : null;
-            return $product;
         });
 
         return response()->json($products);
@@ -31,6 +32,17 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        // ✅ DEBUG: Log request untuk cek dari React (hapus setelah selesai debug)
+        Log::info('Store Product Request', [
+            'all_data' => $request->all(),
+            'has_file' => $request->hasFile('image'),
+            'file_info' => $request->file('image') ? [
+                'name' => $request->file('image')->getClientOriginalName(),
+                'size' => $request->file('image')->getSize(),
+                'mime' => $request->file('image')->getMimeType()
+            ] : null
+        ]);
+
         $validated = $request->validate([
             'umkm_id' => 'required|exists:umkms,id',
             'name' => 'required|string|max:255',
@@ -90,6 +102,13 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
 
+        // ✅ DEBUG: Log request untuk cek dari React (hapus setelah selesai debug)
+        \Log::info('Update Product Request', [
+            'product_id' => $id,
+            'all_data' => $request->all(),
+            'has_file' => $request->hasFile('image'),
+        ]);
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -110,6 +129,10 @@ class ProductController extends Controller
 
         // Update data
         $product->update($validated);
+
+        // Refresh untuk dapetin data terbaru
+        $product->refresh();
+        $product->load('umkm');
 
         // Tambahkan image_url untuk response FE
         $product->image_url = $product->image_path

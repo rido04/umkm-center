@@ -32,16 +32,6 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // ✅ DEBUG: Log request untuk cek dari React (hapus setelah selesai debug)
-        Log::info('Store Product Request', [
-            'all_data' => $request->all(),
-            'has_file' => $request->hasFile('image'),
-            'file_info' => $request->file('image') ? [
-                'name' => $request->file('image')->getClientOriginalName(),
-                'size' => $request->file('image')->getSize(),
-                'mime' => $request->file('image')->getMimeType()
-            ] : null
-        ]);
 
         $validated = $request->validate([
             'umkm_id' => 'required|exists:umkms,id',

@@ -9,34 +9,30 @@ use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\RegionController;
 use App\Http\Controllers\Api\ProductController;
 
-// route buat cek role pas abis login nih tod (pake GET kalo di postman)
-Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
-    return response()->json([
-        'user' => $request->user(),
-        'roles' => $request->user()->getRoleNames(),
-    ]);
-});
-
-//  Crud User buat admin
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('users', UserController::class);
-});
-
 Route::post('login', [AuthController::class, 'login']);
 
-// admin routes pake validasi
-Route::middleware('auth:sanctum')->group(function(){
+Route::prefix('public')->group(function () {
+    Route::get('umkms', [UmkmController::class, 'index']);
+    Route::get('umkms/{id}', [UmkmController::class, 'show']);
+    Route::get('products', [ProductController::class, 'index']);
+    Route::get('products/{id}', [ProductController::class, 'show']);
+    Route::get('events', [EventController::class, 'index']);
+    Route::get('events/{id}', [EventController::class, 'show']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/me', function (Request $request) {
+        return response()->json([
+            'user' => $request->user(),
+            'roles' => $request->user()->getRoleNames(),
+        ]);
+    });
+
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::apiResource('users', UserController::class);
     Route::apiResource('umkms', UmkmController::class);
     Route::apiResource('products', ProductController::class);
     Route::apiResource('regions', RegionController::class);
     Route::apiResource('events', EventController::class);
 });
-
-// pengunjung routes tanpa validasi
-Route::get('/products', [ProductController::class, 'index']);
-Route::get('/umkms', [UmkmController::class, 'index']);
-Route::get('/events', [EventController::class, 'index']);
-Route::get('/events', [EventController::class, 'index']);
-Route::get('/users', [UserController::class, 'index']);
-Route::get('/users/{user}', [UserController::class, 'show']);

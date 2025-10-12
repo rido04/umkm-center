@@ -12,10 +12,11 @@ class EventController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::all()->map(function ($event) {
-            // tambahin URL biar langsung bisa diakses dari FE
+        $events = Event::paginate($request->input('per_page', 15));
+
+        $events->getCollection()->transform(function ($event) {
             $event->image_url = $event->image_path
                 ? asset('storage/' . $event->image_path)
                 : null;
@@ -23,9 +24,14 @@ class EventController extends Controller
         });
 
         return response()->json([
-            'message' => 'success',
-            'data' => $events
-        ], 200);
+            'data' => $events->items(),
+            'current_page' => $events->currentPage(),
+            'last_page' => $events->lastPage(),
+            'per_page' => $events->perPage(),
+            'total' => $events->total(),
+            'from' => $events->firstItem(),
+            'to' => $events->lastItem(),
+        ]);
     }
 
     /**

@@ -13,18 +13,27 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('umkm')->get();
+        $products = Product::with('umkm')
+            ->paginate($request->input('per_page', 15));
 
-        // ✅ FIX: Pakai each() biar langsung mutate collection
-        $products->each(function ($product) {
+        $products->getCollection()->transform(function ($product) {
             $product->image_url = $product->image_path
                 ? asset('storage/' . $product->image_path)
                 : null;
+            return $product;
         });
 
-        return response()->json($products);
+        return response()->json([
+            'data' => $products->items(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+            'per_page' => $products->perPage(),
+            'total' => $products->total(),
+            'from' => $products->firstItem(),
+            'to' => $products->lastItem(),
+        ]);
     }
 
     /**

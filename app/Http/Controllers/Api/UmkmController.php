@@ -19,16 +19,25 @@ class UmkmController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $umkms = $query->get();
+        $umkms = $query->paginate($request->input('per_page', 15));
 
-        $umkms->map(function ($umkm) {
+        $umkms->getCollection()->transform(function ($umkm) {
             $umkm->image_url = $umkm->image_path
                 ? asset('storage/' . $umkm->image_path)
                 : null;
             return $umkm;
         });
 
-        return response()->json($umkms);
+        // Return pagination di root array
+        return response()->json([
+            'data' => $umkms->items(),
+            'current_page' => $umkms->currentPage(),
+            'last_page' => $umkms->lastPage(),
+            'per_page' => $umkms->perPage(),
+            'total' => $umkms->total(),
+            'from' => $umkms->firstItem(),
+            'to' => $umkms->lastItem(),
+        ]);
     }
 
     public function store(Request $request)

@@ -20,19 +20,28 @@ class UserController extends Controller
     /**
      * Display list user (public lihat owner)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::role('owner')->with('roles')->get();
+        $users = User::role('owner')
+            ->with('roles')
+            ->paginate($request->input('per_page', 15));
 
-        // Tambahkan image_url biar FE tinggal pakai langsung
-        $users->map(function ($user) {
+        $users->getCollection()->transform(function ($user) {
             $user->image_url = $user->image_path
                 ? asset('storage/' . $user->image_path)
                 : null;
             return $user;
         });
 
-        return response()->json($users);
+        return response()->json([
+            'data' => $users->items(),
+            'current_page' => $users->currentPage(),
+            'last_page' => $users->lastPage(),
+            'per_page' => $users->perPage(),
+            'total' => $users->total(),
+            'from' => $users->firstItem(),
+            'to' => $users->lastItem(),
+        ]);
     }
 
     /**

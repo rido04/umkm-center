@@ -140,4 +140,29 @@ class UmkmController extends Controller
             'message' => 'UMKM deleted successfully'
         ], 200);
     }
+
+    public function dropdown(Request $request)
+    {
+        $user = $request->user();
+
+        $query = Umkm::select('id', 'name', 'image_path');
+
+        if ($user && $user->hasRole('owner')) {
+            $query->where('user_id', $user->id);
+        }
+
+        $umkms = $query->get();
+
+        $umkms->transform(function ($umkm) {
+            $umkm->image_url = $umkm->image_path
+                ? asset('storage/' . $umkm->image_path)
+                : null;
+            return $umkm;
+        });
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $umkms
+        ], 200);
+    }
 }

@@ -24,7 +24,7 @@ class UserController extends Controller
     {
         $users = User::role('owner')
             ->with('roles')
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->input('per_page', 3));
 
         $users->getCollection()->transform(function ($user) {
             $user->image_url = $user->image_path

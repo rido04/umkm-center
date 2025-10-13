@@ -19,7 +19,7 @@ class UmkmController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $umkms = $query->paginate($request->input('per_page', 15));
+        $umkms = $query->paginate($request->input('per_page', 3));
 
         $umkms->getCollection()->transform(function ($umkm) {
             $umkm->image_url = $umkm->image_path

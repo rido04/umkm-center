@@ -14,7 +14,7 @@ class EventController extends Controller
      */
     public function index(Request $request)
     {
-        $events = Event::paginate($request->input('per_page', 15));
+        $events = Event::paginate($request->input('per_page', 3));
 
         $events->getCollection()->transform(function ($event) {
             $event->image_url = $event->image_path

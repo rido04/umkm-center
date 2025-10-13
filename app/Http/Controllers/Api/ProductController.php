@@ -25,7 +25,7 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->paginate($request->input('per_page', 15));
+        $products = $query->paginate($request->input('per_page', 3));
 
         $products->getCollection()->transform(function ($product) {
             $product->image_url = $product->image_path

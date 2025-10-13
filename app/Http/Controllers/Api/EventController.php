@@ -150,4 +150,21 @@ class EventController extends Controller
             'message' => 'Event deleted successfully'
         ], 200);
     }
+
+    public function dropdown(Request $request)
+    {
+        $events = Event::select('id', 'title', 'image_path')->get();
+
+        $events->transform(function ($event) {
+            $event->image_url = $event->image_path
+                ? asset('storage/' . $event->image_path)
+                : null;
+            return $event;
+        });
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $events
+        ], 200);
+    }
 }

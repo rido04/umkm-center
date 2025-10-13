@@ -184,4 +184,23 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User deleted successfully']);
     }
+
+    public function dropdown(Request $request)
+    {
+        $users = User::role('owner')
+            ->select('id', 'name', 'image_path')
+            ->get();
+
+        $users->transform(function ($user) {
+            $user->image_url = $user->image_path
+                ? asset('storage/' . $user->image_path)
+                : null;
+            return $user;
+        });
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $users
+        ], 200);
+    }
 }

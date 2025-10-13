@@ -181,4 +181,32 @@ class ProductController extends Controller
             'message' => 'Product deleted successfully'
         ], 200);
     }
+
+    public function dropdown(Request $request)
+    {
+        $user = $request->user();
+
+        $query = Product::select('id', 'name', 'image_path', 'umkm_id')
+            ->with('umkm:id,name');
+
+        if ($user && $user->hasRole('owner')) {
+            $query->whereHas('umkm', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        $products = $query->get();
+
+        $products->transform(function ($product) {
+            $product->image_url = $product->image_path
+                ? asset('storage/' . $product->image_path)
+                : null;
+            return $product;
+        });
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $products
+        ], 200);
+    }
 }

@@ -30,6 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/umkms/dropdown', [UmkmController::class, 'dropdown']);
+    Route::get('users/dropdown', [UserController::class, 'dropdown']);
+    Route::get('/events/dropdown', [EventController::class, 'dropdown']);
+    Route::get('/products/dropdown', [ProductController::class, 'dropdown']);
     Route::apiResource('users', UserController::class);
     Route::apiResource('umkms', UmkmController::class);
     Route::apiResource('products', ProductController::class);

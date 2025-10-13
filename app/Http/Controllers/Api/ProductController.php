@@ -15,8 +15,17 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Product::with('umkm')
-            ->paginate($request->input('per_page', 15));
+        $user = $request->user();
+
+        $query = Product::with('umkm');
+
+        if ($user && $user->hasRole('owner')) {
+            $query->whereHas('umkm', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+        }
+
+        $products = $query->paginate($request->input('per_page', 15));
 
         $products->getCollection()->transform(function ($product) {
             $product->image_url = $product->image_path

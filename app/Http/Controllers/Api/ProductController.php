@@ -50,17 +50,6 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // ✅ DEBUG: Log request untuk cek dari React (hapus setelah selesai debug)
-        Log::info('Store Product Request', [
-            'all_data' => $request->all(),
-            'has_file' => $request->hasFile('image'),
-            'file_info' => $request->file('image') ? [
-                'name' => $request->file('image')->getClientOriginalName(),
-                'size' => $request->file('image')->getSize(),
-                'mime' => $request->file('image')->getMimeType()
-            ] : null
-        ]);
-
         $validated = $request->validate([
             'umkm_id' => 'required|exists:umkms,id',
             'name' => 'required|string|max:255',
@@ -83,7 +72,7 @@ class ProductController extends Controller
             'image_path' => $imagePath,
         ]);
 
-        // Load relasi & tambahkan image_url untuk response
+        // image_url untuk response
         $product->load('umkm');
         $product->image_url = $product->image_path
             ? asset('storage/' . $product->image_path)
@@ -102,7 +91,7 @@ class ProductController extends Controller
     {
         $product = Product::with('umkm')->findOrFail($id);
 
-        // Tambahkan image_url untuk FE
+        // Menggunakan Image Url ( untuk fe react)
         $product->image_url = $product->image_path
             ? asset('storage/' . $product->image_path)
             : null;
@@ -120,13 +109,6 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
 
-        // ✅ DEBUG: Log request untuk cek dari React (hapus setelah selesai debug)
-        \Log::info('Update Product Request', [
-            'product_id' => $id,
-            'all_data' => $request->all(),
-            'has_file' => $request->hasFile('image'),
-        ]);
-
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
@@ -134,25 +116,20 @@ class ProductController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Handle image upload
         if ($request->hasFile('image')) {
-            // Hapus gambar lama jika ada
             if ($product->image_path && Storage::disk('public')->exists($product->image_path)) {
                 Storage::disk('public')->delete($product->image_path);
             }
 
-            // Upload baru & simpan PATH RELATIF ke validated
             $validated['image_path'] = $request->file('image')->store('images', 'public');
         }
 
         // Update data
         $product->update($validated);
 
-        // Refresh untuk dapetin data terbaru
         $product->refresh();
         $product->load('umkm');
 
-        // Tambahkan image_url untuk response FE
         $product->image_url = $product->image_path
             ? asset('storage/' . $product->image_path)
             : null;

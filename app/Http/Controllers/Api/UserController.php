@@ -113,7 +113,7 @@ class UserController extends Controller
     {
         $authUser = Auth::user();
 
-        // Cek: kalau bukan admin dan bukan dirinya sendiri -> tolak
+        // Validasi Akses hanya untuk admin
         if (!($authUser->hasRole('admin') || $authUser->id === $user->id)) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
@@ -136,9 +136,8 @@ class UserController extends Controller
         if (isset($validated['email'])) $user->email = $validated['email'];
         if (isset($validated['password'])) $user->password = Hash::make($validated['password']);
 
-        // Handle image upload (hapus lama, upload baru)
         if ($request->hasFile('image_path')) {
-            // Hapus image lama jika ada
+            // Hapus image lama kalau ada
             if ($user->image_path && Storage::disk('public')->exists($user->image_path)) {
                 Storage::disk('public')->delete($user->image_path);
             }
@@ -175,7 +174,6 @@ class UserController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        // Hapus image jika ada (sekarang bisa jalan karena path relatif!)
         if ($user->image_path && Storage::disk('public')->exists($user->image_path)) {
             Storage::disk('public')->delete($user->image_path);
         }
